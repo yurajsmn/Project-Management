@@ -64,14 +64,22 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ message: "Server is running" });
 });
 
+app.get("/", (req, res) => {
+  res.status(200).json({ message: "OK" });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   res.status(500).json({ message: "Internal server error" });
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+server.on("error", (err) => {
+  console.error("Server listen error:", err);
 });
 
 process.on("unhandledRejection", (reason) => {
