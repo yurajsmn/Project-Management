@@ -45,9 +45,14 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Database Connection
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .catch((err) => console.error("MongoDB connection error:", err));
+if (process.env.MONGODB_URI) {
+  mongoose
+    .connect(process.env.MONGODB_URI)
+    .then(() => console.log("MongoDB connected"))
+    .catch((err) => console.error("MongoDB connection error:", err));
+} else {
+  console.error("MONGODB_URI is not set. Skipping MongoDB connection.");
+}
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -65,4 +70,14 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT);
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled Rejection:", reason);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught Exception:", error);
+});
