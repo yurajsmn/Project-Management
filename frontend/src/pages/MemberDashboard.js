@@ -208,110 +208,110 @@ const MemberDashboard = () => {
           ) : (
             <div className="space-y-4">
               {tasks
-                .slice(
-                  (currentPage - 1) * pageSize,
-                  currentPage * pageSize,
-                )
+                .slice((currentPage - 1) * pageSize, currentPage * pageSize)
                 .map((task) => (
-                <div
-                  key={task._id}
-                  className="border border-gray-200 rounded-lg p-6 hover:border-blue-300 hover:shadow-md transition-all"
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <h4 className="text-lg font-bold text-gray-900">
-                        {task.title}
-                      </h4>
-                      <p className="text-gray-600 text-sm mt-1">
-                        {task.description}
-                      </p>
-                    </div>
-                    <select
-                      value={task.status}
-                      onChange={(e) =>
-                        handleUpdateStatus(task._id, e.target.value)
-                      }
-                      className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
-                    >
-                      <option value="todo">📌 To Do</option>
-                      <option value="in-progress">⚙️ In Progress</option>
-                      <option value="done">✅ Done</option>
-                    </select>
-                  </div>
-
-                  {task.submissionLink && (
-                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm text-gray-600 mb-2">
-                        📎 Submission Link:
-                      </p>
-                      <a
-                        href={task.submissionLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-700 font-medium break-all"
-                      >
-                        {task.submissionLink}
-                      </a>
-                    </div>
-                  )}
-
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <label className="text-sm text-gray-600 mb-2 block">
-                      📎 Add/Update Submission Link:
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="url"
-                        value={submissionLinks[task._id] || ""}
-                        placeholder="https://..."
+                  <div
+                    key={task._id}
+                    className="border border-gray-200 rounded-lg p-6 hover:border-blue-300 hover:shadow-md transition-all"
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h4 className="text-lg font-bold text-gray-900">
+                          {task.title}
+                        </h4>
+                        <p className="text-gray-600 text-sm mt-1">
+                          {task.description}
+                        </p>
+                      </div>
+                      <select
+                        value={task.status}
                         onChange={(e) =>
-                          handleSubmissionInputChange(task._id, e.target.value)
+                          handleUpdateStatus(task._id, e.target.value)
                         }
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleSubmissionLinkChange(
-                            task._id,
-                            submissionLinks[task._id],
-                          )
-                        }
-                        disabled={
-                          !submissionLinks[task._id] ||
-                          submissionLinks[task._id] === task.submissionLink
-                        }
-                        className="btn-primary"
+                        className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
                       >
-                        Submit
-                      </button>
+                        <option value="todo">📌 To Do</option>
+                        <option value="in-progress">⚙️ In Progress</option>
+                        <option value="done">✅ Done</option>
+                      </select>
                     </div>
-                  </div>
 
-                  <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
-                    <div className="flex items-center gap-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          task.status === "done"
-                            ? "bg-green-100 text-green-800"
+                    {task.submissionLink && (
+                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-sm text-gray-600 mb-2">
+                          📎 Submission Link:
+                        </p>
+                        <a
+                          href={task.submissionLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-700 font-medium break-all"
+                        >
+                          {task.submissionLink}
+                        </a>
+                      </div>
+                    )}
+
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <label className="text-sm text-gray-600 mb-2 block">
+                        📎 Add/Update Submission Link:
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="url"
+                          value={submissionLinks[task._id] || ""}
+                          placeholder="https://..."
+                          onChange={(e) =>
+                            handleSubmissionInputChange(
+                              task._id,
+                              e.target.value,
+                            )
+                          }
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSubmissionLinkChange(
+                              task._id,
+                              submissionLinks[task._id],
+                            )
+                          }
+                          disabled={
+                            !submissionLinks[task._id] ||
+                            submissionLinks[task._id] === task.submissionLink
+                          }
+                          className="btn-primary"
+                        >
+                          Submit
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
+                      <div className="flex items-center gap-4">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            task.status === "done"
+                              ? "bg-green-100 text-green-800"
+                              : task.status === "in-progress"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {task.status === "done"
+                            ? "✅ Completed"
                             : task.status === "in-progress"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {task.status === "done"
-                          ? "✅ Completed"
-                          : task.status === "in-progress"
-                            ? "⚙️ Working"
-                            : "📌 Pending"}
-                      </span>
-                      <span className="text-sm text-gray-600">
-                        Due: {new Date(task.deadline).toLocaleDateString()}
-                      </span>
+                              ? "⚙️ Working"
+                              : "📌 Pending"}
+                        </span>
+                        <span className="text-sm text-gray-600">
+                          Due: {new Date(task.deadline).toLocaleDateString()}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
               <div className="flex items-center justify-center gap-3 pt-4">
                 <button
                   type="button"
@@ -324,7 +324,8 @@ const MemberDashboard = () => {
                   Previous
                 </button>
                 <span className="text-sm text-gray-600">
-                  Page {currentPage} of {Math.max(1, Math.ceil(tasks.length / pageSize))}
+                  Page {currentPage} of{" "}
+                  {Math.max(1, Math.ceil(tasks.length / pageSize))}
                 </span>
                 <button
                   type="button"

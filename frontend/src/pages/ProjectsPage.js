@@ -198,10 +198,7 @@ const ProjectsPage = () => {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects
-                .slice(
-                  (currentPage - 1) * pageSize,
-                  currentPage * pageSize,
-                )
+                .slice((currentPage - 1) * pageSize, currentPage * pageSize)
                 .map((project) => (
                   <div
                     key={project._id}
@@ -249,7 +246,8 @@ const ProjectsPage = () => {
                 Previous
               </button>
               <span className="text-sm text-gray-600">
-                Page {currentPage} of {Math.max(1, Math.ceil(projects.length / pageSize))}
+                Page {currentPage} of{" "}
+                {Math.max(1, Math.ceil(projects.length / pageSize))}
               </span>
               <button
                 type="button"

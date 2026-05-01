@@ -67,8 +67,7 @@ export const projectAPI = {
     clearCacheByPrefix("projects:");
     return res;
   },
-  getProjects: () =>
-    cachedGet("projects:all", () => api.get("/projects")),
+  getProjects: () => cachedGet("projects:all", () => api.get("/projects")),
   getMyProjects: () =>
     cachedGet("projects:mine", () => api.get("/projects/my-projects")),
   getProjectById: (id) =>

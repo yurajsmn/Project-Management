@@ -232,7 +232,11 @@ const AdminDashboard = () => {
                   className="text-blue-600 hover:text-blue-700 text-sm font-semibold flex items-center gap-2"
                 >
                   View All
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <svg
+                    className="w-4 h-4"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
                     <path
                       fillRule="evenodd"
                       d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
@@ -282,7 +286,9 @@ const AdminDashboard = () => {
                           <td className="py-4 px-4">
                             <div className="flex items-center gap-2">
                               <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-blue-600">
-                                {project.createdBy?.name?.charAt(0).toUpperCase()}
+                                {project.createdBy?.name
+                                  ?.charAt(0)
+                                  .toUpperCase()}
                               </div>
                               <span className="text-gray-900 font-medium">
                                 {project.createdBy?.name}
@@ -311,7 +317,11 @@ const AdminDashboard = () => {
                   {[
                     { name: "Research", percent: 45, color: "bg-blue-600" },
                     { name: "Development", percent: 30, color: "bg-cyan-500" },
-                    { name: "Documentation", percent: 25, color: "bg-purple-600" },
+                    {
+                      name: "Documentation",
+                      percent: 25,
+                      color: "bg-purple-600",
+                    },
                   ].map((item, i) => (
                     <div key={i}>
                       <div className="flex justify-between items-center mb-2">
@@ -355,7 +365,9 @@ const AdminDashboard = () => {
                         </p>
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900">{task.title}</p>
+                        <p className="font-semibold text-gray-900">
+                          {task.title}
+                        </p>
                         <p className="text-sm text-gray-600">
                           {task.description?.substring(0, 40)}...
                         </p>
