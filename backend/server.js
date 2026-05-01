@@ -12,6 +12,8 @@ dotenv.config();
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 // Middleware
 app.use(helmet());
 const allowedOrigins = [
@@ -41,6 +43,9 @@ const limiter = rateLimit({
   max: 1000, // limit each IP to 1000 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
+  validate: {
+    xForwardedForHeader: false,
+  },
 });
 app.use(limiter);
 
