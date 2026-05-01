@@ -15,54 +15,78 @@ const AdminDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showSecondarySections, setShowSecondarySections] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadDashboardData();
+    let isMounted = true;
+    loadDashboardData(isMounted);
+    const timer = setTimeout(() => {
+      if (isMounted) {
+        setShowSecondarySections(true);
+      }
+    }, 200);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, []);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (isMounted = true) => {
     try {
       const projectsRes = await projectAPI.getProjects();
       const projects = projectsRes.data.projects;
 
-      let totalTasks = 0,
-        completedTasks = 0,
-        dueTodayTasks = 0;
-      let allTasks = [];
-
-      for (const project of projects) {
-        const tasksRes = await taskAPI.getTasksByProject(project._id);
-        const projTasks = tasksRes.data.tasks;
-        allTasks.push(...projTasks);
-
-        totalTasks += projTasks.length;
-        completedTasks += projTasks.filter((t) => t.status === "done").length;
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        dueTodayTasks += projTasks.filter(
-          (t) =>
-            new Date(t.deadline).toDateString() === today.toDateString() &&
-            t.status !== "done",
-        ).length;
+      if (!projects || projects.length === 0) {
+        if (isMounted) {
+          setStats({
+            totalProjects: 0,
+            activeTasks: 0,
+            dueTodayTasks: 0,
+            completionRate: 0,
+            projects: [],
+            tasks: [],
+          });
+        }
+        return;
       }
+      const tasksResponses = await Promise.all(
+        projects.map((project) => taskAPI.getTasksByProject(project._id)),
+      );
+      const allTasks = tasksResponses.flatMap((res) => res.data.tasks || []);
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const totalTasks = allTasks.length;
+      const completedTasks = allTasks.filter((t) => t.status === "done").length;
+      const dueTodayTasks = allTasks.filter(
+        (t) =>
+          new Date(t.deadline).toDateString() === today.toDateString() &&
+          t.status !== "done",
+      ).length;
 
       const completionRate =
         totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-      setStats({
-        totalProjects: projects.length,
-        activeTasks: totalTasks,
-        dueTodayTasks,
-        completionRate,
-        projects: projects.slice(0, 5),
-        tasks: allTasks.filter((t) => t.status !== "done").slice(0, 5),
-      });
+      if (isMounted) {
+        setStats({
+          totalProjects: projects.length,
+          activeTasks: totalTasks,
+          dueTodayTasks,
+          completionRate,
+          projects: projects.slice(0, 5),
+          tasks: allTasks.filter((t) => t.status !== "done").slice(0, 5),
+        });
+      }
     } catch (err) {
-      setError("Failed to load dashboard data");
+      if (isMounted) {
+        setError("Failed to load dashboard data");
+      }
     } finally {
-      setLoading(false);
+      if (isMounted) {
+        setLoading(false);
+      }
     }
   };
 
@@ -173,34 +197,6 @@ const AdminDashboard = () => {
                   {stats.activeTasks}
                 </p>
               </div>
-              <div className="bg-white bg-opacity-20 p-3 rounded-lg">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5z" />
-                  <path d="M13 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2h-2z" />
-                  <path d="M5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5z" />
-                  <path d="M13 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2h-2z" />
-                </svg>
-              </div>
-            </div>
-            <p className="text-blue-100 text-sm">
-              {stats.dueTodayTasks} tasks due today
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 border border-gray-100">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <p className="text-gray-600 text-xs font-semibold tracking-wide">
-                  COMPLETION RATE
-                </p>
-                <p className="text-4xl font-bold text-gray-900 mt-2">
-                  {stats.completionRate}%
-                </p>
-              </div>
               <div className="bg-orange-100 p-3 rounded-lg">
                 <svg
                   className="w-6 h-6 text-orange-600"
@@ -224,149 +220,158 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold text-gray-900">
-              Active Project Portfolio
-            </h3>
-            <button
-              onClick={() => navigate("/projects")}
-              className="text-blue-600 hover:text-blue-700 text-sm font-semibold flex items-center gap-2"
-            >
-              View All
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
-          </div>
+        {showSecondarySections ? (
+          <>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-gray-900">
+                  Active Project Portfolio
+                </h3>
+                <button
+                  onClick={() => navigate("/projects")}
+                  className="text-blue-600 hover:text-blue-700 text-sm font-semibold flex items-center gap-2"
+                >
+                  View All
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </div>
 
-          {stats.projects.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500">No projects yet</p>
+              {stats.projects.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500">No projects yet</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                          Project Initiative
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                          Team Lead
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stats.projects.map((project) => (
+                        <tr
+                          key={project._id}
+                          className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
+                          onClick={() => navigate(`/project/${project._id}`)}
+                        >
+                          <td className="py-4 px-4">
+                            <div>
+                              <p className="font-semibold text-gray-900">
+                                {project.title}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {project.description?.substring(0, 30)}...
+                              </p>
+                            </div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-blue-600">
+                                {project.createdBy?.name?.charAt(0).toUpperCase()}
+                              </div>
+                              <span className="text-gray-900 font-medium">
+                                {project.createdBy?.name}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <span className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                              ON TRACK
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                      Project Initiative
-                    </th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                      Team Lead
-                    </th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats.projects.map((project) => (
-                    <tr
-                      key={project._id}
-                      className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
-                      onClick={() => navigate(`/project/${project._id}`)}
-                    >
-                      <td className="py-4 px-4">
-                        <div>
-                          <p className="font-semibold text-gray-900">
-                            {project.title}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {project.description?.substring(0, 30)}...
-                          </p>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-6">
+                  Task Allocation
+                </h3>
+                <div className="space-y-4">
+                  {[
+                    { name: "Research", percent: 45, color: "bg-blue-600" },
+                    { name: "Development", percent: 30, color: "bg-cyan-500" },
+                    { name: "Documentation", percent: 25, color: "bg-purple-600" },
+                  ].map((item, i) => (
+                    <div key={i}>
+                      <div className="flex justify-between items-center mb-2">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-blue-600">
-                            {project.createdBy?.name?.charAt(0).toUpperCase()}
-                          </div>
-                          <span className="text-gray-900 font-medium">
-                            {project.createdBy?.name}
+                          <div
+                            className={`w-3 h-3 rounded-full ${item.color}`}
+                          ></div>
+                          <span className="text-gray-700 font-medium">
+                            {item.name}
                           </span>
                         </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <span className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                          ON TRACK
+                        <span className="text-gray-600 font-semibold">
+                          {item.percent}%
                         </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">
-              Task Allocation
-            </h3>
-            <div className="space-y-4">
-              {[
-                { name: "Research", percent: 45, color: "bg-blue-600" },
-                { name: "Development", percent: 30, color: "bg-cyan-500" },
-                { name: "Documentation", percent: 25, color: "bg-purple-600" },
-              ].map((item, i) => (
-                <div key={i}>
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`w-3 h-3 rounded-full ${item.color}`}
-                      ></div>
-                      <span className="text-gray-700 font-medium">
-                        {item.name}
-                      </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className={`${item.color} h-2 rounded-full`}
+                          style={{ width: `${item.percent}%` }}
+                        ></div>
+                      </div>
                     </div>
-                    <span className="text-gray-600 font-semibold">
-                      {item.percent}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className={`${item.color} h-2 rounded-full`}
-                      style={{ width: `${item.percent}%` }}
-                    ></div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">
-              Urgent Milestones
-            </h3>
-            <div className="space-y-3">
-              {stats.tasks.slice(0, 3).map((task, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-4 p-3 bg-blue-50 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors cursor-pointer"
-                >
-                  <div className="bg-blue-600 text-white rounded-lg p-3 text-center min-w-fit">
-                    <p className="text-xs text-blue-100">DUE</p>
-                    <p className="text-lg font-bold">
-                      {new Date(task.deadline).getDate()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">{task.title}</p>
-                    <p className="text-sm text-gray-600">
-                      {task.description?.substring(0, 40)}...
-                    </p>
-                  </div>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-6">
+                  Urgent Milestones
+                </h3>
+                <div className="space-y-3">
+                  {stats.tasks.slice(0, 3).map((task, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-4 p-3 bg-blue-50 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors cursor-pointer"
+                    >
+                      <div className="bg-blue-600 text-white rounded-lg p-3 text-center min-w-fit">
+                        <p className="text-xs text-blue-100">DUE</p>
+                        <p className="text-lg font-bold">
+                          {new Date(task.deadline).getDate()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">{task.title}</p>
+                        <p className="text-sm text-gray-600">
+                          {task.description?.substring(0, 40)}...
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
+          </>
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+            <div className="h-6 w-48 bg-gray-200 rounded mb-4 animate-pulse" />
+            <div className="h-24 bg-gray-100 rounded animate-pulse" />
           </div>
-        </div>
+        )}
       </main>
 
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">

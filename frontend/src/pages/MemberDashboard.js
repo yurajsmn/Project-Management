@@ -9,6 +9,8 @@ const MemberDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submissionLinks, setSubmissionLinks] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
   const [stats, setStats] = useState({
     total: 0,
     todo: 0,
@@ -25,6 +27,7 @@ const MemberDashboard = () => {
     try {
       const res = await taskAPI.getMyTasks();
       setTasks(res.data.tasks);
+      setCurrentPage(1);
       const nextLinks = {};
       res.data.tasks.forEach((task) => {
         nextLinks[task._id] = task.submissionLink || "";
@@ -204,7 +207,12 @@ const MemberDashboard = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {tasks.map((task) => (
+              {tasks
+                .slice(
+                  (currentPage - 1) * pageSize,
+                  currentPage * pageSize,
+                )
+                .map((task) => (
                 <div
                   key={task._id}
                   className="border border-gray-200 rounded-lg p-6 hover:border-blue-300 hover:shadow-md transition-all"
@@ -304,6 +312,33 @@ const MemberDashboard = () => {
                   </div>
                 </div>
               ))}
+              <div className="flex items-center justify-center gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(1, prev - 1))
+                  }
+                  className="btn-secondary"
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </button>
+                <span className="text-sm text-gray-600">
+                  Page {currentPage} of {Math.max(1, Math.ceil(tasks.length / pageSize))}
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCurrentPage((prev) =>
+                      Math.min(prev + 1, Math.ceil(tasks.length / pageSize)),
+                    )
+                  }
+                  className="btn-secondary"
+                  disabled={currentPage >= Math.ceil(tasks.length / pageSize)}
+                >
+                  Next
+                </button>
+              </div>
             </div>
           )}
         </div>

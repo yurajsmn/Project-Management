@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { projectAPI, taskAPI } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
@@ -14,11 +14,7 @@ const ProjectPage = () => {
   const [showAddMember, setShowAddMember] = useState(false);
   const [memberEmail, setMemberEmail] = useState("");
 
-  useEffect(() => {
-    loadProject();
-  }, [projectId]);
-
-  const loadProject = async () => {
+  const loadProject = useCallback(async () => {
     try {
       const res = await projectAPI.getProjectById(projectId);
       setProject(res.data.project);
@@ -30,7 +26,11 @@ const ProjectPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId]);
+
+  useEffect(() => {
+    loadProject();
+  }, [loadProject]);
 
   const handleAddMember = async (e) => {
     e.preventDefault();

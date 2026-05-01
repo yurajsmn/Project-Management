@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { projectAPI } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
@@ -11,28 +11,31 @@ const ProjectsPage = () => {
   const [error, setError] = useState("");
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 6;
   const [formData, setFormData] = useState({
     title: "",
     description: "",
   });
 
-  useEffect(() => {
-    loadProjects();
-  }, []);
-
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     try {
       const res =
         user?.role === "admin"
           ? await projectAPI.getProjects()
           : await projectAPI.getMyProjects();
       setProjects(res.data.projects || []);
+      setCurrentPage(1);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load projects");
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.role]);
+
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -192,42 +195,76 @@ const ProjectsPage = () => {
             <p className="text-gray-600">No projects available yet.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project) => (
-              <div
-                key={project._id}
-                onClick={() => navigate(`/project/${project._id}`)}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-blue-200 cursor-pointer transition-all"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900">
-                      {project.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {project.description?.substring(0, 80)}
-                      {project.description && project.description.length > 80
-                        ? "..."
-                        : ""}
-                    </p>
-                  </div>
-                  <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
-                    Active
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-blue-600">
-                      {project.createdBy?.name?.charAt(0).toUpperCase()}
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projects
+                .slice(
+                  (currentPage - 1) * pageSize,
+                  currentPage * pageSize,
+                )
+                .map((project) => (
+                  <div
+                    key={project._id}
+                    onClick={() => navigate(`/project/${project._id}`)}
+                    className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-blue-200 cursor-pointer transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">
+                          {project.title}
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {project.description?.substring(0, 80)}
+                          {project.description &&
+                          project.description.length > 80
+                            ? "..."
+                            : ""}
+                        </p>
+                      </div>
+                      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                        Active
+                      </span>
                     </div>
-                    <span>{project.createdBy?.name || "Unknown"}</span>
+
+                    <div className="flex items-center justify-between text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-blue-600">
+                          {project.createdBy?.name?.charAt(0).toUpperCase()}
+                        </div>
+                        <span>{project.createdBy?.name || "Unknown"}</span>
+                      </div>
+                      <span>{project.members?.length || 0} members</span>
+                    </div>
                   </div>
-                  <span>{project.members?.length || 0} members</span>
-                </div>
-              </div>
-            ))}
-          </div>
+                ))}
+            </div>
+
+            <div className="flex items-center justify-center gap-3 mt-8">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                className="btn-secondary"
+                disabled={currentPage === 1}
+              >
+                Previous
+              </button>
+              <span className="text-sm text-gray-600">
+                Page {currentPage} of {Math.max(1, Math.ceil(projects.length / pageSize))}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setCurrentPage((prev) =>
+                    Math.min(prev + 1, Math.ceil(projects.length / pageSize)),
+                  )
+                }
+                className="btn-secondary"
+                disabled={currentPage >= Math.ceil(projects.length / pageSize)}
+              >
+                Next
+              </button>
+            </div>
+          </>
         )}
       </main>
     </div>

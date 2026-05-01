@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { taskAPI, projectAPI } from "../utils/api";
-import { useAuth } from "../context/AuthContext";
 
 const TaskPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,11 +17,7 @@ const TaskPage = () => {
     deadline: "",
   });
 
-  useEffect(() => {
-    loadData();
-  }, [projectId]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const projectRes = await projectAPI.getProjectById(projectId);
       setProject(projectRes.data.project);
@@ -35,7 +29,11 @@ const TaskPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleCreateTask = async (e) => {
     e.preventDefault();

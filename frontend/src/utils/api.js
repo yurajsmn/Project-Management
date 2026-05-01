@@ -10,6 +10,28 @@ const api = axios.create({
   },
 });
 
+const cacheStore = new Map();
+const CACHE_TTL_MS = 30_000;
+
+const cachedGet = async (key, requestFn, ttl = CACHE_TTL_MS) => {
+  const now = Date.now();
+  const cached = cacheStore.get(key);
+  if (cached && now - cached.timestamp < ttl) {
+    return cached.response;
+  }
+  const response = await requestFn();
+  cacheStore.set(key, { response, timestamp: now });
+  return response;
+};
+
+const clearCacheByPrefix = (prefix) => {
+  Array.from(cacheStore.keys()).forEach((key) => {
+    if (key.startsWith(prefix)) {
+      cacheStore.delete(key);
+    }
+  });
+};
+
 // Add token to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
@@ -40,22 +62,51 @@ export const authAPI = {
 };
 
 export const projectAPI = {
-  createProject: (data) => api.post("/projects", data),
-  getProjects: () => api.get("/projects"),
-  getMyProjects: () => api.get("/projects/my-projects"),
-  getProjectById: (id) => api.get(`/projects/${id}`),
+  createProject: async (data) => {
+    const res = await api.post("/projects", data);
+    clearCacheByPrefix("projects:");
+    return res;
+  },
+  getProjects: () =>
+    cachedGet("projects:all", () => api.get("/projects")),
+  getMyProjects: () =>
+    cachedGet("projects:mine", () => api.get("/projects/my-projects")),
+  getProjectById: (id) =>
+    cachedGet(`projects:${id}`, () => api.get(`/projects/${id}`)),
   addMember: (data) => api.post("/projects/add-member", data),
-  getProjectStats: (projectId) => api.get(`/projects/${projectId}/stats`),
+  getProjectStats: (projectId) =>
+    cachedGet(`projects:${projectId}:stats`, () =>
+      api.get(`/projects/${projectId}/stats`),
+    ),
 };
 
 export const taskAPI = {
-  createTask: (data) => api.post("/tasks", data),
-  getTasksByProject: (projectId) => api.get(`/tasks/project/${projectId}`),
-  getMyTasks: () => api.get("/tasks/my-tasks"),
-  getTaskById: (id) => api.get(`/tasks/${id}`),
-  updateTaskStatus: (id, data) => api.patch(`/tasks/${id}/status`, data),
-  updateTask: (id, data) => api.put(`/tasks/${id}`, data),
-  deleteTask: (id) => api.delete(`/tasks/${id}`),
+  createTask: async (data) => {
+    const res = await api.post("/tasks", data);
+    clearCacheByPrefix("tasks:");
+    return res;
+  },
+  getTasksByProject: (projectId) =>
+    cachedGet(`tasks:project:${projectId}`, () =>
+      api.get(`/tasks/project/${projectId}`),
+    ),
+  getMyTasks: () => cachedGet("tasks:mine", () => api.get("/tasks/my-tasks")),
+  getTaskById: (id) => cachedGet(`tasks:${id}`, () => api.get(`/tasks/${id}`)),
+  updateTaskStatus: async (id, data) => {
+    const res = await api.patch(`/tasks/${id}/status`, data);
+    clearCacheByPrefix("tasks:");
+    return res;
+  },
+  updateTask: async (id, data) => {
+    const res = await api.put(`/tasks/${id}`, data);
+    clearCacheByPrefix("tasks:");
+    return res;
+  },
+  deleteTask: async (id) => {
+    const res = await api.delete(`/tasks/${id}`);
+    clearCacheByPrefix("tasks:");
+    return res;
+  },
 };
 
 export default api;

@@ -16,7 +16,7 @@ const Navbar = () => {
     if (user) {
       refreshUser();
     }
-  }, []);
+  }, [user, refreshUser]);
 
   useEffect(() => {
     const handleFocus = () => {
