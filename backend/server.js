@@ -45,9 +45,14 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Database Connection
+const mongooseOptions = {
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 5000,
+};
+
 if (process.env.MONGODB_URI) {
   mongoose
-    .connect(process.env.MONGODB_URI)
+    .connect(process.env.MONGODB_URI, mongooseOptions)
     .then(() => console.log("MongoDB connected"))
     .catch((err) => console.error("MongoDB connection error:", err));
 } else {
