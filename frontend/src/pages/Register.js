@@ -71,7 +71,7 @@ const Register = () => {
                 onChange={handleChange}
                 required
                 className="form-input"
-                placeholder="John Doe"
+                placeholder="Yuvraj Suman"
               />
             </div>
 
