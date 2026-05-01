@@ -17,6 +17,10 @@ app.use(helmet());
 const allowedOrigins = [
   process.env.FRONTEND_URL || "http://localhost:3000",
   "http://localhost:3001",
+  "https://project-management-one-ashy.vercel.app",
+  ...(process.env.FRONTEND_URLS
+    ? process.env.FRONTEND_URLS.split(",").map((url) => url.trim())
+    : []),
 ];
 
 app.use(
