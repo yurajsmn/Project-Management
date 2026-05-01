@@ -69,6 +69,10 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ message: "Server is running" });
 });
 
+app.get("/api", (req, res) => {
+  res.status(200).json({ message: "API is running" });
+});
+
 app.get("/", (req, res) => {
   res.status(200).json({ message: "OK" });
 });
